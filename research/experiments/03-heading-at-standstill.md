@@ -95,9 +95,93 @@ Limits:
 - We have no second unit to compare with.
 - The meaning of `deg` is inferred; step D tests it.
 
+### 2026-09-24, run B: on the dock, charging
+
+| Measurement | Value |
+|---|---|
+| State | `5`, observed right after "charging started"; now labelled "charging" |
+| Heading | constant, 0 °/s over 178 s |
+| Reported position | (330, 353), the pause position from run A, **not** the dock |
+
+The robot had been carried back to the dock physically, but its reported position
+did not change. On the dock the robot does not update its pose at all, so run B
+says nothing about the gyroscope. Step C was therefore changed: the robot has to be
+in a paused cleaning session, as in run A.
+
+### 2026-09-24, run C: after a power cycle, paused
+
+Procedure:
+
+1. Main switch off, wait 10 s, on. Robot left on the dock.
+2. Wait for solid blue Wi-Fi LED, plus 2 more minutes untouched.
+3. Start cleaning from the app, pause it after about 15 s, close the app.
+4. Robot untouched; the maintainer confirmed it stood still.
+
+```
+position (366, 387), 178 s, 60 samples:
+    heading changes +1.53 °/s (+92 °/min), +272° in total; linear within ±1.4°
+```
+
+This is the **same rate as run A**, after a fresh boot and calibration opportunity.
+The bias is constant and reproducible, and a power cycle does not remove it.
+
+### 2026-09-24, run D: manual 90° rotation
+
+Procedure:
+
+1. Same paused session as run C.
+2. After about 35 s, the maintainer rotated the robot by hand, flat on the floor,
+   about 90° clockwise.
+3. Polling every 2 s.
+
+| Time | Heading (unwrapped) | Note |
+|---|---|---|
+| 1–33 s | 0 → 48 | drift about +1.5 °/s |
+| 33.5–39.5 s | 48 → −36 | **manual rotation**: −84° in total, about −94° after removing the drift |
+| 40–120 s | −36 → 88 | drift continues at the same rate |
+
+Other observations:
+
+- The reported position stayed at (366, 387) throughout; the rotation was in place.
+- `analyze` reports ±49° residual for this run because the segment contains the
+  rotation. Splitting segments at heading jumps is a to-do for the tool.
+
+### Conclusion so far (runs A–D)
+
+1. `deg` **is** the robot's heading estimate. A clockwise rotation decreases it, so
+   positive means counter-clockwise.
+2. The gyroscope **responds correctly to real rotation**: a hand rotation of about
+   90° was reported as about 94°. So the gyroscope is alive and its scale factor is
+   roughly right.
+3. At standstill the heading drifts by a **constant +1.53 °/s** (counter-clockwise).
+   The rate is identical before and after a power cycle.
+4. The reported position does not change at standstill. So the wheel odometry
+   reports no motion, and the drift is not wheel slip.
+
+Interpretation, **not proven**:
+
+- The robot is not removing the gyroscope's zero-rate offset (bias).
+- Possible causes:
+  - calibration fails
+  - stored calibration data is wrong
+  - the sensor's offset has grown beyond what the firmware compensates
+- Raw MEMS gyroscopes often have offsets of this order before calibration
+  (unverified; depends on the part). A robot is expected to calibrate the offset
+  away while standing still.
+
+What this does not show yet:
+
+- How much the bias affects a cleaning run. The LiDAR SLAM may correct heading
+  while it can match scans.
+- Whether the bias alone explains the map breaking after 2–3 minutes.
+- Which component is at fault: the gyro chip, its calibration data, or firmware.
+
 Next steps:
 
-1. Run steps B, C and D.
-2. If the drift persists after a power cycle on the dock, run a monitored cleaning
-   run from the dock. Mark the moment the map visibly breaks, then compare it with
-   the heading and trajectory logs.
+1. **Run E:** a full cleaning run logged with `monitor`, map included. Note the
+   wall-clock time when the map visibly breaks in the app. Then compare the
+   heading, the trajectory and `relocaNotice` around that moment.
+2. Check whether the app or the robot offers a gyroscope/sensor calibration or a
+   "reset sensors" function. Running it modifies robot state, so the owner decides.
+3. Later, if needed: identify the IMU chip on the mainboard (photo) and its
+   datasheet offset spec.

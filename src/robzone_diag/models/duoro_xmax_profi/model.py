@@ -44,9 +44,10 @@ MODEL = ModelDefinition(
         "No verified LAN fingerprint yet: discovery reports this model as UNKNOWN.",
     ),
     labels={
-        # Observed in experiment 02: 2 before a cleaning run started, 1 while cleaning.
+        # Observed: 2 before a cleaning run started and while paused (exp. 02/03),
+        # 1 while cleaning (exp. 02), 5 on the dock after "charging started" (exp. 03B).
         # Other values are unknown for this firmware; related robots use different sets.
-        "work_state": {1: "cleaning", 2: "idle / standby"},
+        "work_state": {1: "cleaning", 2: "idle / standby", 5: "charging"},
         "error": {0: "no error"},
     },
     fingerprint=None,

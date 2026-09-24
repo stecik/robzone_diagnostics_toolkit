@@ -79,12 +79,17 @@ Sencor variant) become the first real telemetry source.
 
 - The robot reports its own pose (`robotPos`, `deg`), trajectory, map increments,
   state and error codes over TCP 8888. `status`, `monitor` and `analyze` read them.
-- 2026-09-24, preliminary: with the robot paused and its reported position
-  constant, the reported heading drifted linearly by about **1.5 °/s**. See
-  [experiment 03](experiments/03-heading-at-standstill.md).
-- This looks like an uncompensated gyroscope bias, but it is not confirmed yet.
-  Still to check: that the robot was physically still, the docked and
-  power-cycled runs, and that `deg` really is the heading.
+- 2026-09-24 ([experiment 03](experiments/03-heading-at-standstill.md)), runs A–D:
+  - The robot stood physically still (confirmed), and its reported heading drifted
+    linearly at **+1.53 °/s**.
+  - The rate was identical after a power cycle.
+  - A manual 90° rotation was reported as about 94°, so `deg` is the heading and the
+    gyro responds to real rotation.
+  - The reported position stayed constant, so the drift does not come from the
+    wheels.
+- Current reading: an **uncompensated gyroscope bias**, i.e. branch C: IMU or its
+  calibration.
+- Not yet shown: that the bias causes the map breakdown during cleaning (run E).
 
 Two routes could give us one:
 

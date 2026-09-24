@@ -45,7 +45,7 @@ device, or a similar product name, is not support.
 | 2026-09-24 | LAN fingerprint ([experiment 01](../research/experiments/01-lan-discovery.md)) | Robot identified by the router DHCP list (`udhcp 1.27.2`) and confirmed by switching it off. Embedded Linux (TTL 64). TCP 22 (OpenSSH 7.6), 53, 8000 (Mongoose 6.11) and 8888 open. No Tuya broadcasts. This is a research observation, not a verified capability. |
 | 2026-09-24 | App traffic capture ([experiment 02](../research/experiments/02-app-traffic-capture.md)) | The app talks to the robot on TCP 8888 (JSON). The robot reports state, battery, error, `robotPos`/`deg`, the map and the trajectory. Cloud: `*.hctrobot.com`. |
 | 2026-09-24 | `status` / `monitor` with this tool | Read-only client works: state, battery, error, firmware and pose read over LAN. The battery value matched the app (57–58 %), so **Battery is Verified**. The others stay Experimental. |
-| 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | The reported heading drifts about 1.5 °/s while the reported position is constant. The maintainer confirmed the robot was physically still. The cause is under investigation. |
+| 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | Runs A–D. At standstill the heading drifts +1.53 °/s. The rate is the same after a power cycle, and the robot was confirmed physically still. A manual 90° rotation was reported as about 94°, so `deg` is the heading. On the dock the pose is not updated. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has
