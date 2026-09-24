@@ -189,7 +189,40 @@ Interpretation, not proven, **one occurrence**:
 - Any stop has this effect: pausing, the robot waiting, or possibly the robot
   stopping by itself.
 
-### Conclusion so far (runs A–E)
+### 2026-09-24, run F: clean start, uninterrupted cleaning in the arena
+
+Setup:
+
+- Same arena as run E.
+- The old map was deleted in the app, so the run started from an empty map. The
+  robot started on the dock.
+- The robot was not touched until the end.
+- Log: `captures/03f-clean-run.jsonl` (private).
+
+Timeline (local time):
+
+| Time | Observation (owner) | Robot's own data |
+|---|---|---|
+| 18:06 | on the dock | pose (367, 367), heading 90°, empty map |
+| 18:09:29 | passing next to the dock | 7 cells (about 13 cm) from the start pose: **matches** |
+| 18:09:41 | crosses the arena away from the dock | about 45 cells (about 80 cm) from the dock: **matches** |
+| 18:11:01 | "cleaning finished", should return to the dock | state 3, then 4 (returning). It circles about 12–16 cells from where it thinks the dock is. |
+| 18:11–18:15 | lost: on the opposite side, bumps into things, then reverses at the dock but cannot dock | when physically at the dock, it reports 40–55 cells (about 70–95 cm) away |
+| 18:15 | put on the dock by hand, "charging started" | pose (384, 345), **heading −60°**; the charger is recorded at (384, 345) |
+
+The robot was docked the same way at the start and at the end: same physical place,
+same physical orientation. Yet after about 10 minutes of uninterrupted cleaning:
+
+- **The position error is about 28 cells (about 50 cm).**
+- **The heading error is about 150°**: 90° at the start, −60° at the end.
+- `relocaNotice` stayed 0 throughout: the robot did not notice it was lost.
+- The app map (screenshot) shows about 4 m² for a floor of about 2.5 m², with
+  smeared and duplicated outlines. The dock icon is in the middle of the map,
+  although the dock stands in a corner.
+- The robot's own trajectory is internally smooth, with no jumps. The error
+  accumulates gradually and does not come from a single relocalisation event.
+
+### Conclusion so far (runs A–F)
 
 1. `deg` **is** the robot's heading estimate. A clockwise rotation decreases it, so
    positive means counter-clockwise.
@@ -212,19 +245,41 @@ Interpretation, **not proven**:
   (unverified; depends on the part). A robot is expected to calibrate the offset
   away while standing still.
 
-What this does not show yet:
+5. During cleaning the error builds up anyway (run F): about 150° of heading and
+   about 50 cm of position error after 10 minutes of uninterrupted cleaning, while
+   the robot believes it is localised. The resulting map matches the owner's
+   symptoms.
+6. A pause makes it worse (run E). About 100° of heading drift during a 1-minute
+   stop was followed by failed relocalisation and a lost map.
 
-- How much the bias affects a cleaning run. The LiDAR SLAM may correct heading
-  while it can match scans.
-- Whether the bias alone explains the map breaking after 2–3 minutes.
-- Which component is at fault: the gyro chip, its calibration data, or firmware.
+**Current diagnosis (decision branch C): the heading estimate is faulty because the
+gyroscope's zero-rate offset is not compensated.**
+
+- The LiDAR SLAM corrects part of the error while the robot moves: 1.5 °/s over
+  10 min would be about 900°, and about 150° remained.
+- It cannot keep up, so the map rotates and duplicates.
+
+What remains open:
+
+- Whether the gyro chip itself is faulty (offset out of spec or drifting), or its
+  calibration or the firmware's compensation is. There is no reset or calibration
+  function in the app, manual or online. The maintainer's search found none, and
+  removing the battery did not help.
+- Whether a marginal LiDAR also contributes. A healthy LiDAR SLAM in a small, simple
+  arena would be expected to hold heading better. This is not measurable over the
+  LAN protocol.
 
 Next steps:
 
-1. **Run E:** a full cleaning run logged with `monitor`, map included. Note the
-   wall-clock time when the map visibly breaks in the app. Then compare the
-   heading, the trajectory and `relocaNotice` around that moment.
-2. Check whether the app or the robot offers a gyroscope/sensor calibration or a
-   "reset sensors" function. Running it modifies robot state, so the owner decides.
-3. Later, if needed: identify the IMU chip on the mainboard (photo) and its
-   datasheet offset spec.
+1. **Hardware, least invasive first.**
+   1. Open the robot and photograph the mainboard.
+   2. Identify the IMU chip (marking) and whether it sits on the mainboard or on a
+      separate small board with a connector.
+   3. Look up its datasheet zero-rate offset. Check the board for mechanical
+      damage, loose mounting or cracked solder near the IMU.
+2. **Software, needs the owner's decision.** SSH (OpenSSH 7.6) is open on the robot.
+   A shell could show IMU logs and calibration files. Getting one means trying
+   credentials, which is not a read-only step.
+3. **Tooling.** Turn "heading drift at standstill" into a repeatable
+   `diagnose` check. Thresholds should come from a healthy unit, which we do not
+   have yet.

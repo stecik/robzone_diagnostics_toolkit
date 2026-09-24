@@ -46,6 +46,7 @@ device, or a similar product name, is not support.
 | 2026-09-24 | App traffic capture ([experiment 02](../research/experiments/02-app-traffic-capture.md)) | The app talks to the robot on TCP 8888 (JSON). The robot reports state, battery, error, `robotPos`/`deg`, the map and the trajectory. Cloud: `*.hctrobot.com`. |
 | 2026-09-24 | `status` / `monitor` with this tool | Read-only client works: state, battery, error, firmware and pose read over LAN. The battery value matched the app (57–58 %), so **Battery is Verified**. The others stay Experimental. |
 | 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | Runs A–D. At standstill the heading drifts +1.53 °/s. The rate is the same after a power cycle, and the robot was confirmed physically still. A manual 90° rotation was reported as about 94°, so `deg` is the heading. On the dock the pose is not updated. |
+| 2026-09-24 | Cleaning runs in a 1.5 × 1.65 m arena (runs E, F) | Run E: a 1-minute pause led to failed relocalisation (`relocaNotice` 2, app: "Mapa ztracena"). Run F: after 10 minutes of uninterrupted cleaning, on the same dock, the robot reported about 150° of heading error and about 50 cm of position error. It failed to dock, and its map was smeared and duplicated. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has

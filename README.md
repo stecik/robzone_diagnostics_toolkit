@@ -67,7 +67,7 @@ points at one of them.
 | 3 | Network capture: app traffic | **done**: the app talks to the robot on TCP 8888 (JSON). Pose, map, trajectory, state and errors are available ([protocol notes](research/protocols/hct-lan-8888.md)) |
 | 4 | App (APK) analysis: endpoints, SDKs, map/trajectory formats | planned |
 | 5 | Minimal read-only client: `status`, `monitor` | **done** (Experimental) |
-| 6 | JSONL logger (pose, state, errors, map updates) + `analyze` | **in progress**. First finding: [heading drift at standstill](research/experiments/03-heading-at-standstill.md) (preliminary) |
+| 6 | JSONL logger (pose, state, errors, map updates) + `analyze` | **in progress**. Finding for the reference unit: the heading estimate drifts about 1.5 °/s at standstill, and the map breaks down within about 10 min. Most likely an uncompensated gyroscope bias ([experiment 03](research/experiments/03-heading-at-standstill.md)). |
 | 7 | Automated `diagnose` with PASS/WARN/FAIL/UNKNOWN/UNSUPPORTED | planned |
 | 8 | Hardware: passive UART sniffing of the LiDAR ↔ mainboard link | only if needed |
 

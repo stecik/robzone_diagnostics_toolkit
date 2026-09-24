@@ -87,9 +87,16 @@ Sencor variant) become the first real telemetry source.
     gyro responds to real rotation.
   - The reported position stayed constant, so the drift does not come from the
     wheels.
-- Current reading: an **uncompensated gyroscope bias**, i.e. branch C: IMU or its
-  calibration.
-- Not yet shown: that the bias causes the map breakdown during cleaning (run E).
+- Run E: a 1-minute pause (about 100° of drift) was followed by failed
+  relocalisation and a lost map. The app confirmed it with "Mapa ztracena".
+- Run F: 10 minutes of uninterrupted cleaning from a clean map. At the end, on
+  the same dock in the same orientation as at the start, the robot reported about
+  **150° of heading error and about 50 cm of position error**, and it failed to
+  dock. The app map is smeared and duplicated, which matches the owner's symptoms.
+- **Current diagnosis: branch C.** The gyroscope's zero-rate offset is not
+  compensated, and SLAM corrects only part of it. Open questions:
+  - chip versus calibration/firmware;
+  - a possible LiDAR contribution, which is not measurable over LAN.
 
 Two routes could give us one:
 
