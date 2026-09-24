@@ -162,6 +162,7 @@ class Recorder:
 
     def _on_status(self, status: messages.StatusReport) -> None:
         s = self.summary
+        reloc = status.relocalisation_notice
         s.status_reports += 1
         if status.error:
             s.errors_seen.add(status.error)
@@ -174,7 +175,7 @@ class Recorder:
         print(
             f"{_clock()}  status: {_robot.label(self.model, 'work_state', status.work_state)}, "
             f"battery {status.battery}%, error {_robot.label(self.model, 'error', status.error)}, "
-            f"relocaNotice {status.relocalisation_notice}",
+            f"relocalisation {_robot.label(self.model, 'reloca_notice', reloc)}",
             file=sys.stderr,
         )
 

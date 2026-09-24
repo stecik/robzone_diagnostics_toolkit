@@ -1,3 +1,4 @@
+import base64
 import json
 
 import pytest
@@ -92,3 +93,17 @@ def test_strip_secrets_removes_identifiers():
     stripped = json.dumps(messages.strip_secrets(document))
     for secret in (FAKE_AUTH, FAKE_DEVICE, FAKE_HOST):
         assert secret not in stripped
+
+
+def test_decodes_track_points():
+    # Layout seen in a real capture: 04 04, counter, count, then (x, y) uint16 pairs.
+    raw = bytes.fromhex("0404" + "00000000" + "0300" + "75016f01" + "76016f01" + "91016f01")
+    track = messages.decode_track(base64.b64encode(raw).decode())
+    assert track.counter == 0
+    assert track.points == [(373, 367), (374, 367), (401, 367)]
+
+
+def test_track_decoder_tolerates_bad_input():
+    assert messages.decode_track("") is None
+    assert messages.decode_track("not base64!") is None
+    assert messages.decode_track("BAQ=") is None  # too short

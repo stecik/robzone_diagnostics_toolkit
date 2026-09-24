@@ -49,6 +49,14 @@ MODEL = ModelDefinition(
         # Other values are unknown for this firmware; related robots use different sets.
         "work_state": {1: "cleaning", 2: "idle / standby", 5: "charging"},
         "error": {0: "no error"},
+        # extParam.relocaNotice. 2 coincided with the app message "Změna oblasti selhala.
+        # Mapa ztracena. Začne nový úklid" (exp. 03E); 1 was set after the robot had been
+        # carried while paused (inferred: relocalisation pending).
+        "reloca_notice": {
+            0: "none",
+            1: "robot was moved, relocalisation pending (inferred)",
+            2: "relocalisation failed, map lost",
+        },
     },
     fingerprint=None,
 )

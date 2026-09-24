@@ -7,7 +7,9 @@ model layer decides how to label enum values.
 
 from __future__ import annotations
 
+import base64
 import json
+import struct
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -176,6 +178,37 @@ class MapReport:
             map_b64=value.get("map") or "",
             track_b64=value.get("track") or "",
         )
+
+
+@dataclass(frozen=True)
+class Track:
+    """Decoded ``track`` field: the robot's trajectory since the current map started.
+
+    Layout observed on firmware 7.6.2716 (all little-endian)::
+
+        0-1  04 04        constant
+        2-5  uint32       counter that grows during a session (meaning unknown)
+        6-7  uint16       number of points
+        8-   uint16 x, uint16 y per point, in map cells (same frame as robotPos)
+    """
+
+    counter: int
+    points: list[tuple[int, int]]
+
+
+def decode_track(b64: str) -> Track | None:
+    if not b64:
+        return None
+    try:
+        data = base64.b64decode(b64, validate=True)
+    except ValueError:
+        return None
+    if len(data) < 8:
+        return None
+    counter, count = struct.unpack_from("<IH", data, 2)
+    available = (len(data) - 8) // 4
+    points = [struct.unpack_from("<HH", data, 8 + 4 * i) for i in range(min(count, available))]
+    return Track(counter, points)
 
 
 def _int(raw: Any) -> int | None:

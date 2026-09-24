@@ -146,7 +146,50 @@ Other observations:
 - `analyze` reports ±49° residual for this run because the segment contains the
   rotation. Splitting segments at heading jumps is a to-do for the tool.
 
-### Conclusion so far (runs A–D)
+### 2026-09-24, run E: cleaning in a small arena, one pause
+
+Setup:
+
+- Arena about 1.50 × 1.65 m, closed on all sides by furniture. The dock sits in one
+  corner.
+- The session continued an existing map. The robot had been carried to the dock
+  while paused, so `relocaNotice` was 1 from the start.
+- Log: `captures/03e-cleaning-run.jsonl` (private).
+
+Timeline (local time):
+
+| Time | Event |
+|---|---|
+| 17:53 | Cleaning from the dock. The robot drives about two laps along the arena perimeter. |
+| 17:58:31 | Paused by the maintainer, 20–30 cm in front of the dock. The reported pose puts it about 25 cells (about 45 cm) from its docked position. |
+| 17:58–17:59:41 | Paused. The heading drifts +1.42 °/s at a constant position, about 100° in total. |
+| 17:59:35 | Resumed with the robot's button. The state goes to 1 (cleaning); the pose stays frozen at the paused value. |
+| **18:00:12** | `relocaNotice` goes 1 → **2**. The pose jumps to (374, 367), heading −27°. Clean time, trajectory and map are reset. |
+| after | The robot drives erratically, "zig-zag". The maintainer observed it did not follow the usual systematic pattern. |
+
+The app then showed: **„Změna oblasti selhala. Mapa ztracena. Začne nový úklid"**
+("Area change failed. Map lost. A new cleaning will start."). This confirms that
+`relocaNotice = 2` means *relocalisation failed, map lost*.
+
+Other observations:
+
+- Trajectory format decoded (`track` field): `04 04`, a uint32 counter, a uint16
+  count, then uint16 (x, y) pairs in map cells.
+- The perimeter laps give a map scale of about 1.8 cm per cell. This is a rough
+  estimate from the arena size.
+- While driving, the reported heading agrees with the direction of motion (y axis
+  points down) within about ±40° at 3 s sampling. The SLAM pose is internally
+  consistent while moving.
+
+Interpretation, not proven, **one occurrence**:
+
+- The heading drifted about 100° during the 1-minute pause.
+- After resuming, the LiDAR scan could not be matched to the old map with that
+  wrong heading, so relocalisation failed and the robot started a new map.
+- Any stop has this effect: pausing, the robot waiting, or possibly the robot
+  stopping by itself.
+
+### Conclusion so far (runs A–E)
 
 1. `deg` **is** the robot's heading estimate. A clockwise rotation decreases it, so
    positive means counter-clockwise.

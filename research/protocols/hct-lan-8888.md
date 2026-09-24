@@ -81,7 +81,13 @@ Notifications (`noteCmd`, robot → app):
 
 `extParam` keys observed include:
 
-- `relocaNotice` (0 throughout; *inferred*: a relocalisation notice)
+- `relocaNotice`:
+  - 0 = normal
+  - 1 = set after the robot was carried while paused (*inferred*: relocalisation
+    pending)
+  - **2 = relocalisation failed, map lost**. This coincided with the app message
+    "Změna oblasti selhala. Mapa ztracena." ("Area change failed. Map lost.") in
+    experiment 03E.
 - `mapUpdateSign`
 - `hadWork`
 - `workType`
@@ -92,17 +98,17 @@ Notifications (`noteCmd`, robot → app):
 
 | Field | Observed | Meaning *(inferred unless stated)* |
 |---|---|---|
-| `robotPos` | `"367,367"` … `"327,357"`, and once empty | Robot position in map cells |
+| `robotPos` | `"367,367"` … `"327,357"`, and once empty | Robot position in map cells, about 1.8 cm per cell (rough). y points down. A new map starts around (367, 367). |
 | `deg` | `254`, `-79`, `151`, `199`, … | Heading in degrees; the value range is not normalised |
 | `mapWidth`/`mapHeight` | `700` | Map size in cells |
 | `blockSize` | `10000` | Cells per block, i.e. 100×100 → a 7×7 block grid |
 | `mapSign` | base64 of 49 × uint16 | Per-block version counters. The app echoes its known versions and the robot sends only the changed blocks *(inferred)*. |
 | `map` | base64, growing (3064 → 4848 chars) | Changed map blocks. Encoding not decoded yet. |
-| `trackNum` / `track` | uint16 count / base64 | Incremental trajectory: the app sends the count it has, the robot sends the new points |
+| `trackNum` / `track` | uint16 count / base64 | Trajectory. `track` decodes as `04 04`, a uint32 counter, a uint16 point count and uint16 (x, y) pairs. With `trackNum` = 0 the robot sends the whole track since the map started. |
 | `centerPoint`, `leftMaxPoint`, `rightMaxPoint` | `500,500`, `0,0`, `700,700` | Map geometry |
 | `emptyMap` | `1` at start, then `0` | A new map was created |
 | `clearSign` | `YYYY-MM-DD-hh-mm-ss-N` | Cleaning-session ID (robot clock) |
-| `clearArea` / `clearTime` | area units / minutes | Session progress |
+| `clearArea` / `clearTime` | m² / **seconds** | Session progress |
 | `doTime` | increasing by 5 per poll | Robot uptime counter in seconds |
 
 ## Why this matters for the drift diagnosis

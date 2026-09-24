@@ -75,7 +75,7 @@ def render(model: ModelDefinition | None, status: Received | None, pose: Receive
             f"Battery:          {s.battery if s.battery is not None else '?'} %",
             f"Error code:       {_robot.label(model, 'error', s.error)}",
             f"Firmware:         {s.firmware or 'not reported'}",
-            f"Relocalisation:   relocaNotice={_value(s.relocalisation_notice)} (meaning inferred)",
+            f"Relocalisation:   {_robot.label(model, 'reloca_notice', s.relocalisation_notice)}",
         ]
     else:
         lines.append("State:            no status report received")
