@@ -67,6 +67,14 @@ Sencor variant) become the first real telemetry source.
 
 **Status: observed. SSH is open. Credentials are unknown.**
 
+- 2026-09-24: I probed the server without credentials, using a dummy user name.
+  - Server: `OpenSSH_7.6`.
+  - Host key: ed25519.
+  - Accepted authentication methods: `publickey,password,keyboard-interactive`.
+  - Password-less access is not offered, and no credentials are published.
+- Raw sensor data therefore has to come from the app (hidden debug commands,
+  phase 4) or from the hardware (UART, phase 8).
+
 - If we had shell access, logs, sensor daemons and possibly raw LiDAR/odometry
   streams could be read directly on the robot. That would be the most direct path
   to diagnosing the map drift.
