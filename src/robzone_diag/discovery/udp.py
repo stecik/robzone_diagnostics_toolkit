@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 log = logging.getLogger(__name__)
 
 MAX_DATAGRAM = 65535
+TICK_INTERVAL = 10.0
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,8 @@ class ListenResult:
     datagrams: list[Datagram]
     bound_ports: list[int]
     bind_errors: dict[int, str]
+    listened_s: float = 0.0
+    interrupted: bool = False  # stopped early by Ctrl+C; datagrams so far are kept
 
 
 @dataclass(frozen=True)
@@ -46,16 +49,25 @@ def listen(
     duration: float,
     periodic: PeriodicSend | None = None,
     on_datagram: Callable[[Datagram], None] | None = None,
+    on_tick: Callable[[float, int], None] | None = None,
 ) -> ListenResult:
+    """Listen for ``duration`` seconds. Ctrl+C ends early and returns what was received.
+
+    ``on_tick(elapsed_s, datagram_count)`` is called about every ``TICK_INTERVAL`` seconds.
+    """
     selector = selectors.DefaultSelector()
     result = ListenResult([], [], {})
     sockets = [s for s in (_bind(port, result) for port in ports) if s is not None]
     for sock in sockets:
         selector.register(sock, selectors.EVENT_READ)
     sender = _open_sender(periodic) if periodic else None
+    started = time.monotonic()
     try:
-        _loop(selector, duration, periodic, sender, result, on_datagram)
+        _loop(selector, duration, periodic, sender, result, on_datagram, on_tick)
+    except KeyboardInterrupt:
+        result.interrupted = True
     finally:
+        result.listened_s = time.monotonic() - started
         for sock in sockets:
             sock.close()
         if sender:
@@ -87,14 +99,20 @@ def _open_sender(periodic: PeriodicSend) -> socket.socket:
     return sock
 
 
-def _loop(selector, duration, periodic, sender, result, on_datagram) -> None:
-    deadline = time.monotonic() + duration
-    next_send = time.monotonic()
+def _loop(selector, duration, periodic, sender, result, on_datagram, on_tick) -> None:
+    started = time.monotonic()
+    deadline = started + duration
+    next_send = started
+    next_tick = started + TICK_INTERVAL
     while (now := time.monotonic()) < deadline:
         if sender and now >= next_send:
             _send(sender, periodic)
             next_send = now + periodic.interval
-        wake = min(deadline, next_send) if sender else deadline
+        if on_tick and now >= next_tick:
+            on_tick(now - started, len(result.datagrams))
+            next_tick = now + TICK_INTERVAL
+        # Short waits keep Ctrl+C responsive (select() on Windows is not interruptible).
+        wake = min(deadline, next_send if sender else deadline, next_tick, now + 1.0)
         if not selector.get_map():
             time.sleep(max(0.0, wake - now))
             continue

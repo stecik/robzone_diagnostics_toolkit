@@ -87,11 +87,17 @@ def run(args: argparse.Namespace) -> int:
     _progress(f"Listening for UDP broadcasts on ports {_join(ports)} for {args.duration:g} s ...")
     _progress("(Ctrl+C stops early and still prints what was found.)")
     heard: set[str] = set()
-    try:
-        listened = udp.listen(ports, args.duration, periodic, lambda d: _announce(d, heard))
-    except KeyboardInterrupt:
-        _progress("Interrupted.")
-        return ExitCode.INTERRUPTED
+    listened = udp.listen(
+        ports,
+        args.duration,
+        periodic,
+        on_datagram=lambda d: _announce(d, heard),
+        on_tick=lambda elapsed, count: _progress(
+            f"  ... {elapsed:.0f}/{args.duration:g} s, {count} datagram(s) so far"
+        ),
+    )
+    if listened.interrupted:
+        _progress(f"Interrupted after {listened.listened_s:.0f} s; showing what was found.")
     if not listened.bound_ports:
         print("error: could not listen on any UDP port (see messages above)", file=sys.stderr)
         return ExitCode.ERROR
@@ -117,6 +123,8 @@ def run(args: argparse.Namespace) -> int:
         print(render(records, listened, local_addresses, args))
     if args.output:
         _progress(f"Report saved to {args.output}")
+    if listened.interrupted:
+        return ExitCode.INTERRUPTED
     return ExitCode.OK if records else ExitCode.NOT_FOUND
 
 
@@ -163,7 +171,8 @@ def render(
     lines = [
         "",
         f"This computer:        {_join(local_addresses) or 'no IPv4 address found'}",
-        f"Listened on UDP:      {_join(listened.bound_ports)} for {args.duration:g} s",
+        f"Listened on UDP:      {_join(listened.bound_ports)} for {listened.listened_s:.0f} s"
+        + (" (interrupted)" if listened.interrupted else ""),
         f"Tuya request sent:    {'yes' if args.tuya_request else 'no (add --tuya-request)'}",
     ]
     for port, error in sorted(listened.bind_errors.items()):
@@ -271,6 +280,8 @@ def _results(
         "local_addresses": local_addresses,
         "bound_udp_ports": listened.bound_ports,
         "udp_bind_errors": {str(k): v for k, v in listened.bind_errors.items()},
+        "listened_s": round(listened.listened_s, 1),
+        "interrupted": listened.interrupted,
         "datagrams_received": len(listened.datagrams),
         "hosts": [_host_dict(r, redacted) for r in records],
     }

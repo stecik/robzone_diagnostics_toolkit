@@ -58,9 +58,9 @@ points at one of them.
 
 | Phase | What | Status |
 |---|---|---|
-| 1 | LAN discovery: ARP, UDP broadcasts, open ports | **tool ready, awaiting robot measurements** |
-| 2 | Tuya test: is it Tuya? Which data points (DPs) can be read locally? | pending phase 1 |
-| 3 | Network capture (idle, cleaning, mapping, manual drive, docking, map collapse) | planned |
+| 1 | LAN discovery: ARP, UDP broadcasts, open ports | **done for the reference robot**: Linux, SSH, TCP 8000/8888 open, no Tuya broadcasts ([results](research/experiments/01-lan-discovery.md)) |
+| 2 | Tuya test: is it Tuya? Which data points (DPs) can be read locally? | deprioritised: Tuya hypothesis weakened |
+| 3 | Network capture (app traffic first, then idle, cleaning, mapping, docking, map collapse) | **next**: [experiment 02](research/experiments/02-app-traffic-capture.md) |
 | 4 | App (APK) analysis: endpoints, SDKs, map/trajectory formats | planned |
 | 5 | Minimal read-only client: `info`, `status`, `monitor` | planned |
 | 6 | Synchronised JSONL logger (pose, state, errors, map updates) | planned |
@@ -176,6 +176,9 @@ What the output means:
 - **Model: UNKNOWN** is expected today. No Robzone model has a verified network
   fingerprint yet, and the tool never guesses a model from weak hints such as a MAC
   vendor prefix.
+- The DUORO X-MAX PROFI sends **no** broadcasts. `discover` lists it only when it is
+  already in your ARP table. The reliable way to find it is your router's client
+  list. There it appeared as `udhcp 1.27.2` (2.4 GHz). Then run `scan <ip>`.
 - A **Tuya announcement** shows only that *some* device on your LAN speaks Tuya.
   Plugs, bulbs and cameras often do. Check that it is the robot: compare the MAC
   with your router's DHCP list, or switch the robot off and run `discover` again.
@@ -204,6 +207,10 @@ uv run robzone-diag scan 192.168.1.50 --ports all --output captures/scan-all.jso
   - a list such as `6668,8000-9000`
 - Port names in the output are **conventions**, not proof of the service behind
   them.
+- Progress is printed every 10 s. Ctrl+C stops the scan and prints the ports probed
+  so far.
+- Run a full scan while the robot is on and the app is closed. The robot may
+  accept only one client connection.
 - Small Wi-Fi devices drop connections when probed too fast. Keep the defaults
   (8 parallel connections, 3 s timeout). If ports show as "No answer", retry with
   `--workers 2 --timeout 5`.
@@ -290,4 +297,4 @@ parsers, sanitizing captures and the PR checklist.
 
 ## License
 
-Not chosen yet.
+[MIT](LICENSE)

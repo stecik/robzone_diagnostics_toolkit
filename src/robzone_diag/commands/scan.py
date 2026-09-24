@@ -86,34 +86,43 @@ def run(args: argparse.Namespace) -> int:
         f"Scanning {len(ports)} TCP port(s) on {ip} (timeout {args.timeout:g} s) ...",
         file=sys.stderr,
     )
-    try:
-        results = tcp.scan(ip, ports, args.timeout, args.workers, not args.no_banner)
-    except KeyboardInterrupt:
-        print("Interrupted.", file=sys.stderr)
-        return ExitCode.INTERRUPTED
+    outcome = tcp.scan(
+        ip,
+        ports,
+        args.timeout,
+        args.workers,
+        not args.no_banner,
+        on_progress=lambda done, total: print(
+            f"  ... {done}/{total} ports probed", file=sys.stderr, flush=True
+        ),
+    )
+    results = outcome.results
+    if outcome.interrupted:
+        print(f"Interrupted after {len(results)} port(s); showing what was found.", file=sys.stderr)
     mac = next((n.mac for n in lan.read_neighbour_table() if n.ip == ip), None)
 
     document = report.envelope(
         "scan",
         {"host": ip, "ports": args.ports, "port_count": len(ports), "timeout_s": args.timeout},
-        _results(ip, redact.mac(mac) if args.redact else mac, results),
+        _results(ip, redact.mac(mac) if args.redact else mac, outcome),
     )
     if args.output:
         report.write_json(args.output, document)
     if args.json:
         print(json.dumps(document, indent=2))
     else:
-        print(render(ip, redact.mac(mac) if args.redact else mac, results))
+        print(render(ip, redact.mac(mac) if args.redact else mac, outcome, len(ports)))
     if args.output:
         print(f"Report saved to {args.output}", file=sys.stderr)
-    return ExitCode.OK
+    return ExitCode.INTERRUPTED if outcome.interrupted else ExitCode.OK
 
 
 def _count(results: list[tcp.PortResult], state: tcp.PortState) -> int:
     return sum(1 for r in results if r.state is state)
 
 
-def render(ip: str, mac: str | None, results: list[tcp.PortResult]) -> str:
+def render(ip: str, mac: str | None, outcome: tcp.ScanOutcome, requested: int) -> str:
+    results = outcome.results
     open_ports = [r for r in results if r.state is tcp.PortState.OPEN]
     lines = ["", f"Host: {ip}   MAC: {mac or 'unknown'}", "", "Open TCP ports:"]
     for result in open_ports:
@@ -126,6 +135,13 @@ def render(ip: str, mac: str | None, results: list[tcp.PortResult]) -> str:
     closed = _count(results, tcp.PortState.CLOSED)
     filtered = _count(results, tcp.PortState.FILTERED)
     lines += ["", f"Closed (refused): {closed}   No answer (filtered): {filtered}"]
+    if outcome.interrupted:
+        lines.append(f"Interrupted: {len(results)} of {requested} requested ports were probed.")
+    if outcome.retry_skipped:
+        lines.append(
+            f"{filtered} ports gave no answer, too many to retry. The host probably went "
+            "offline or stopped answering during the scan; repeat it while the robot is on."
+        )
     if not open_ports and not closed:
         lines.append(
             "No port answered at all: the host may be offline, asleep, on another network, "
@@ -142,8 +158,12 @@ def _printable(data: bytes) -> str:
     return "".join(ch if ch.isprintable() else "." for ch in text)[:120]
 
 
-def _results(ip: str, mac: str | None, results: list[tcp.PortResult]) -> dict[str, Any]:
+def _results(ip: str, mac: str | None, outcome: tcp.ScanOutcome) -> dict[str, Any]:
+    results = outcome.results
     return {
+        "interrupted": outcome.interrupted,
+        "retry_skipped": outcome.retry_skipped,
+        "probed_count": len(results),
         "host": ip,
         "mac": mac,
         "open": [

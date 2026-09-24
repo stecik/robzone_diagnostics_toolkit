@@ -80,3 +80,44 @@ not that it was confirmed on a robot.
     an `authCode` taken from an app capture.
 - **Xiaomi miio**: UDP 54321 hello packet
   ([python-miio](https://github.com/rytilahti/python-miio/blob/master/miio/miioprotocol.py)).
+
+## Local JSON protocol on TCP 8888 (Clouds Robot / Sencor / Robzone family)
+
+Checked 2026-09-24. **Not yet observed on our robot.** Our robot's 8888 port is
+open, but nothing has been sent to it.
+
+- [jerzik/robzone_xclean](https://github.com/jerzik/robzone_xclean)
+  - A Home Assistant LAN integration for **Robzone DUORO XCLEAN 5** (app "HCT Robot",
+    `com.hctbot.robot`, firmware 5.0.x).
+  - Robot framing: a 20-byte ping `14000000 0001c800 00000100 16270000 00000000`,
+    then commands with the header tail `fa00c800 00001927 18270000 00000000`.
+  - It sends `"version":"5.0.8"`. `transitCmd` 131 returns 132 with `map`/`track`
+    (base64), `clearArea` and `clearTime`.
+- [MichalTichy/ha-SencorRobotics](https://github.com/MichalTichy/ha-SencorRobotics)
+  (Sencor; fork of [albinmedoc/ha-cleanmate](https://github.com/albinmedoc/ha-cleanmate))
+  - The client connects to `robot:8888`.
+  - Each frame is a 20-byte header followed by ASCII JSON. Bytes 0–3 hold the total
+    frame length, including the header, as a little-endian uint32.
+  - JSON envelope:
+    `{"cmd":0,"control":{"authCode","deviceIp","devicePort":"8888","targetId":<deviceId>,"targetType":"3"},"seq":0,"value":{"transitCmd":"<id>",...},"version":...}`.
+  - `authCode` and `deviceId` come from a capture of the phone app's traffic.
+  - Read-only queries:
+    - `transitCmd` 98 = state: `battery`, `workState`, `workMode`, `error`, `version`
+    - `transitCmd` 133 = map info: `robotPos`, `chargerPos`, room names
+  - Actuating commands include 100 (start), 102 (stop/pause), 104 (dock),
+    106 (mode), 108 (manual drive, in robzone_xclean) and 143 (beep).
+  - Sencor error codes include 119 "localization failed". Enum values differ between
+    projects, so treat them as firmware-specific.
+- [JakobFischer2574/proscenic-790t-local](https://github.com/JakobFischer2574/proscenic-790t-local)
+  `docs/protocol.md`: the most complete description of the header fields. On some
+  firmware the robot talks only to a cloud TCP server (port 20008) and ignores 8888.
+- [openHAB thread 59755](https://community.openhab.org/t/controlling-robot-vacuum-cleaner-through-tcp-request/59755):
+  a Robzone Duoro XControl controlled on 8888.
+
+## MAC vendor prefixes
+
+Sources: [maclookup.app](https://maclookup.app/macaddress/84c8a0) and the Wireshark
+manuf database.
+
+- `84:c8:a0`: Hui Zhou Gaoshengda Technology Co., Ltd. This is our robot candidate.
+- `a8:80:55`: Tuya Smart Inc. This is the Tuya host on the maintainer's LAN.

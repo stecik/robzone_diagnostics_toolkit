@@ -9,42 +9,74 @@ Status values:
 
 ## H1. The X-MAX PROFI's Wi-Fi module uses the Tuya platform
 
-**Status: open. The evidence is mixed.**
+**Status: weakened. Not rejected yet.**
 
 Evidence for:
 
 - The app manual (page 14) tells you to join a pairing AP named „SmartLife-číslo".
   `SmartLife-XXXX` is the usual AP name of Tuya devices in AP pairing mode. See
   [sources.md](sources.md).
-- 2026-09-24: `robzone-diag discover` on the maintainer's LAN decoded a Tuya
-  protocol 3.4 announcement from one host, and that host has TCP 6668 open.
-  **We have not confirmed that this host is the robot.** Other Tuya devices may be
-  on that LAN. See [experiments/01-lan-discovery.md](experiments/01-lan-discovery.md).
 
-Evidence against / alternatives:
+Evidence against:
 
-- The RobZone app's developer is Shenzhen Haocheng, not Tuya Inc. The same
-  developer's Sencor app talks to its robots with a non-Tuya JSON protocol on
-  TCP 8888.
-- The app might embed the Tuya SDK under its own branding. This is common with
-  OEM apps. Checking it needs the APK (phase 4).
+- 2026-09-24: the host believed to be the robot (DHCP name `udhcp 1.27.2`) looks
+  like this:
+  - it runs embedded Linux (TTL 64, OpenSSH 7.6)
+  - it sends **no** Tuya broadcasts
+  - TCP 6668 is **not** open
+  - see [experiments/01](experiments/01-lan-discovery.md)
+- The Tuya announcements we did decode come from a different host (TTL 255,
+  another MAC vendor).
+- The RobZone app's developer is Shenzhen Haocheng, not Tuya Inc.
+
+Remaining ways Tuya could still be involved:
+
+- The Tuya Linux SDK can run without LAN broadcasts.
+- The pairing AP name may simply be reused.
 
 What would decide it:
 
-1. Show that the host announcing Tuya 3.4 is the robot. Compare its MAC with the
-   robot's MAC, or power the robot off and check that the announcements stop.
-2. Scan the robot for TCP 6668 and TCP 8888.
+- The APK: does it embed the Tuya SDK? (phase 4)
+- A traffic capture: cloud hostnames. (phase 3)
+
+## H3. The robot uses the Clouds Robot / Sencor-family local protocol on TCP 8888
+
+**Status: supported. Open.**
+
+- The robot candidate has TCP 8888 open.
+- [ha-SencorRobotics](https://github.com/MichalTichy/ha-SencorRobotics) controls
+  Sencor/Cleanmate/Proscenic robots over TCP 8888 with JSON messages. The Sencor app
+  comes from the same developer as the RobZone app.
+- Nothing has been sent to 8888 yet. The protocol needs an `authCode` and a device
+  ID, which that project takes from an app capture.
+
+A closer relative now exists: [jerzik/robzone_xclean](https://github.com/jerzik/robzone_xclean),
+a LAN integration for another Robzone robot (DUORO XCLEAN 5) using the same framing.
+See [sources.md](sources.md).
+
+What would decide it: capture the RobZone app's own traffic on the phone
+([experiment 02](experiments/02-app-traffic-capture.md)) and compare the framing.
+If it matches, read-only state and pose queries (`transitCmd` 98 / 133 in the
+Sencor variant) become the first real telemetry source.
+
+## H4. The robot's Linux system is reachable over SSH
+
+**Status: observed. SSH is open. Credentials are unknown.**
+
+- If we had shell access, logs, sensor daemons and possibly raw LiDAR/odometry
+  streams could be read directly on the robot. That would be the most direct path
+  to diagnosing the map drift.
+- Logging in means trying credentials, and that is not a read-only step. It is
+  **not** done without the owner's explicit decision.
 
 ## H2. Map drift comes from the LiDAR, odometry, IMU, SLAM or the app/cloud
 
 **Status: open.** We have no telemetry access yet.
 
-If H1 is confirmed, the Tuya Sweeper SDK suggests where to look:
+Two routes could give us one:
 
-- maps and paths travel as cloud files
-- live state travels as DPs
+- If H3 is confirmed, the 8888 protocol may expose the pose, the map and error
+  codes.
+- If H4 is possible, logs on the robot itself may show the sensor state.
 
-Whether any sensor-level data (odometry, IMU, raw LiDAR) is exposed at all is
-unknown. It is likely that it is **not** exposed over the network. In that case the
-decision tree falls back to the reported pose and map versus reality, and then to
-hardware (UART) for raw sensor data.
+Whether raw sensor data (odometry, IMU, raw LiDAR) is exposed at all is unknown.

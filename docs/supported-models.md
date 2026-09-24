@@ -37,7 +37,7 @@ device, or a similar product name, is not support.
 
 | Date | Test | Result |
 |---|---|---|
-| — | none yet on a unit confirmed to be the robot | — |
+| 2026-09-24 | LAN fingerprint ([experiment 01](../research/experiments/01-lan-discovery.md)) | Robot identified by the router DHCP list (`udhcp 1.27.2`) and confirmed by switching it off. Embedded Linux (TTL 64). TCP 22 (OpenSSH 7.6), 53, 8000 (Mongoose 6.11) and 8888 open. No Tuya broadcasts. This is a research observation, not a verified capability. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has

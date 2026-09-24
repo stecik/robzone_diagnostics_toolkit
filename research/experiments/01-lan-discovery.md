@@ -97,3 +97,47 @@ robot's identity was **not** checked.
   looked "filtered". The defaults were lowered to 8 workers, a 3 s timeout, and one
   retry.
 - Still unknown: whether this host is the robot. Steps A–E will answer that.
+
+### 2026-09-24: robot located by router DHCP list
+
+The maintainer's router lists a 2.4 GHz client whose DHCP name is
+**`udhcp 1.27.2`**. This is the default vendor string of the BusyBox `udhcpc`
+client. The maintainer believes this client is the robot. It is **not** the Tuya
+host above; it has a different IP and a different MAC vendor prefix.
+
+Measurements from the maintainer's PC on the same LAN:
+
+| Measurement | Robot candidate | Tuya host from the preliminary run |
+|---|---|---|
+| MAC vendor prefix | `84:c8:a0` | `a8:80:55` |
+| ICMP TTL | 64 (typical Linux) | 255 (typical lwIP/RTOS Wi-Fi module) |
+| UDP broadcasts on 6666/6667/7000 | none heard | Tuya 3.4 announcements |
+| Open TCP ports (common set) | 22, 53, 8000, 8888 | 6668 |
+| TCP 22 banner | `SSH-2.0-OpenSSH_7.6` | — |
+| TCP 8000, one `GET /` | `404`, header `Server: Mongoose/6.11` (embedded web server) | — |
+
+Interpretation, not proven:
+
+- The robot runs embedded Linux (BusyBox + OpenSSH) and connects to Wi-Fi
+  directly. It does not look like a Tuya RTOS module.
+- The Tuya host is probably another device on the LAN.
+- TCP 8888 matches the port used by the Sencor/Clouds Robot local JSON protocol.
+  The same developer makes the Sencor app and the RobZone app. See
+  [H1/H3](../hypotheses.md).
+
+**Robot-off check (step B), done 2026-09-24.** The maintainer switched the robot
+off, and the `udhcp 1.27.2` client disappeared from the router's client list. This
+confirms, to high confidence, that it is the robot.
+
+Tooling lessons:
+
+- The X-MAX PROFI sends **no** broadcasts, so `discover` lists it only when it is
+  already in the ARP table. The router's DHCP list was the reliable way to find it.
+- A full port scan was running while the robot was switched off. The results from
+  that run are therefore invalid. `scan` now skips its retry pass when more than 256
+  ports are silent. It also shows progress and keeps partial results on Ctrl+C.
+
+Still to do:
+
+- A full TCP port scan (step E) with the robot on. Run it when no app session is
+  active: the robot may accept only one client on 8888.

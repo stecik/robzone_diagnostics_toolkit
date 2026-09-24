@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import errno
 import socket
-from concurrent.futures import ThreadPoolExecutor
+import time
+from collections.abc import Callable
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -77,6 +79,19 @@ DEFAULT_TIMEOUT = 3.0
 DEFAULT_WORKERS = 8
 
 
+# Retrying more silent ports than this is pointless: the host most likely went offline
+# or firewalls everything, and a 2-worker retry pass would take hours.
+MAX_RETRY_PORTS = 256
+PROGRESS_INTERVAL = 10.0
+
+
+@dataclass
+class ScanOutcome:
+    results: list[PortResult]  # in requested port order; only ports actually probed
+    interrupted: bool = False  # stopped by Ctrl+C
+    retry_skipped: bool = False  # too many silent ports to retry
+
+
 def scan(
     host: str,
     ports: list[int],
@@ -84,23 +99,55 @@ def scan(
     workers: int = DEFAULT_WORKERS,
     grab_banner: bool = True,
     retries: int = 1,
-) -> list[PortResult]:
-    """Scan ``ports``; ports with no answer are retried with minimal concurrency."""
-    results = {r.port: r for r in _scan_once(host, ports, timeout, workers, grab_banner)}
-    for _ in range(retries):
-        silent = [p for p, r in results.items() if r.state is PortState.FILTERED]
-        if not silent:
-            break
-        for result in _scan_once(host, silent, timeout, 2, grab_banner):
-            results[result.port] = result
-    return [results[p] for p in ports]
+    on_progress: Callable[[int, int], None] | None = None,
+) -> ScanOutcome:
+    """Scan ``ports``; silent ports are retried with minimal concurrency.
+
+    Ctrl+C stops the scan and returns the ports probed so far.
+    ``on_progress(done, total)`` is called about every ``PROGRESS_INTERVAL`` seconds.
+    """
+    outcome = ScanOutcome([])
+    results: dict[int, PortResult] = {}
+    try:
+        _scan_once(host, ports, timeout, workers, grab_banner, results, on_progress)
+        for _ in range(retries):
+            silent = [p for p, r in results.items() if r.state is PortState.FILTERED]
+            if len(silent) > MAX_RETRY_PORTS:
+                outcome.retry_skipped = True
+                break
+            if not silent:
+                break
+            _scan_once(host, silent, timeout, 2, grab_banner, results, on_progress)
+    except KeyboardInterrupt:
+        outcome.interrupted = True
+    outcome.results = [results[p] for p in ports if p in results]
+    return outcome
 
 
 def _scan_once(
-    host: str, ports: list[int], timeout: float, workers: int, grab_banner: bool
-) -> list[PortResult]:
-    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(ports)))) as pool:
-        return list(pool.map(lambda port: probe_port(host, port, timeout, grab_banner), ports))
+    host: str,
+    ports: list[int],
+    timeout: float,
+    workers: int,
+    grab_banner: bool,
+    results: dict[int, PortResult],
+    on_progress: Callable[[int, int], None] | None,
+) -> None:
+    pool = ThreadPoolExecutor(max_workers=max(1, min(workers, len(ports))))
+    pending = {pool.submit(probe_port, host, port, timeout, grab_banner) for port in ports}
+    next_progress = time.monotonic() + PROGRESS_INTERVAL
+    try:
+        while pending:
+            # Short waits keep Ctrl+C responsive on Windows.
+            done, pending = wait(pending, timeout=1.0, return_when=FIRST_COMPLETED)
+            for future in done:
+                result = future.result()
+                results[result.port] = result
+            if on_progress and time.monotonic() >= next_progress:
+                on_progress(len(ports) - len(pending), len(ports))
+                next_progress = time.monotonic() + PROGRESS_INTERVAL
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def probe_port(host: str, port: int, timeout: float, grab_banner: bool) -> PortResult:
