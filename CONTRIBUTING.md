@@ -28,8 +28,11 @@ src/robzone_diag/
   commands/           one module per subcommand (register + run + output rendering)
   discovery/          model-agnostic LAN discovery: ARP, UDP listener, TCP scan
   protocols/          wire-protocol codecs, shared by any model that uses them
-    tuya/             Tuya LAN protocol (broadcast decoder so far)
-  models/             everything model-specific
+    tuya/             Tuya LAN protocol (broadcast decoder only)
+    hct/              HCT Robot LAN protocol, TCP 8888: frames, messages, read-only client
+  analysis/           offline measurements on monitor logs (e.g. heading drift)
+  config.py           settings from environment / .env (secrets never on the command line)
+  models/             everything model-specific (capabilities, enum labels)
     base.py           ModelDefinition, Capability, CapabilityState, SupportLevel
     registry.py       MODELS tuple, get_model(), identify()
     duoro_xmax_profi/ one package per model

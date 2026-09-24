@@ -77,13 +77,19 @@ class ModelDefinition:
     manufacturer: str
     name: str
     support: SupportLevel
-    protocol: str | None  # None while the protocol is unknown
+    protocol: str | None  # protocol ID from robzone_diag.protocols.PROTOCOLS; None = unknown
     capabilities: Mapping[Capability, CapabilityState]
     tested_hardware: str
     notes: tuple[str, ...] = ()
+    # Human-readable meanings of model-specific enum values, e.g.
+    # {"work_state": {1: "cleaning"}}. Only values actually observed on this model.
+    labels: Mapping[str, Mapping[int, str]] = field(default_factory=dict)
     # Returns True only on strong evidence that a discovered host is this model.
     # None means no verified fingerprint exists yet, so the model is never auto-detected.
     fingerprint: Callable[[HostRecord], bool] | None = field(default=None, compare=False)
 
     def state(self, capability: Capability) -> CapabilityState:
         return self.capabilities.get(capability, CapabilityState.TBD)
+
+    def label(self, kind: str, value: int | None) -> str | None:
+        return None if value is None else self.labels.get(kind, {}).get(value)

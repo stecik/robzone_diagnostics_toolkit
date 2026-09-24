@@ -7,10 +7,18 @@ import logging
 import sys
 
 from robzone_diag import __version__
-from robzone_diag.commands import discover, models, scan
+from robzone_diag.commands import (
+    analyze,
+    discover,
+    import_credentials,
+    models,
+    monitor,
+    scan,
+    status,
+)
 from robzone_diag.exitcodes import ExitCode
 
-COMMANDS = (models, discover, scan)
+COMMANDS = (models, discover, scan, import_credentials, status, monitor, analyze)
 
 
 def build_parser() -> argparse.ArgumentParser:

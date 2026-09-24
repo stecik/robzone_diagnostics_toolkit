@@ -12,6 +12,7 @@ from robzone_diag.models.base import (
     ModelDefinition,
 )
 from robzone_diag.models.registry import all_models
+from robzone_diag.protocols import describe
 
 
 def register(subparsers: argparse._SubParsersAction) -> None:
@@ -46,7 +47,7 @@ def render(models: tuple[ModelDefinition, ...]) -> str:
             f"    Manufacturer:    {model.manufacturer}",
             f"    Model ID:        {model.model_id}",
             f"    Support:         {model.support}",
-            f"    Protocol:        {model.protocol or 'unknown (under investigation)'}",
+            f"    Protocol:        {describe(model.protocol)}",
             f"    Tested hardware: {model.tested_hardware}",
             "    Capabilities:",
         ]

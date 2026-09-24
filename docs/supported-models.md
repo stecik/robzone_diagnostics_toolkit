@@ -19,7 +19,7 @@ device, or a similar product name, is not support.
 
 | Model | Model ID | Support | Discovery | Basic telemetry | LiDAR | Odometry | Navigation | Tested hardware |
 |---|---|---|---|---|---|---|---|---|
-| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development | TBD | TBD | TBD | TBD | TBD | 1 unit (maintainer) |
+| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development | TBD | Experimental (state, battery, error, firmware) | TBD | TBD | Experimental (reported pose only) | 1 unit (maintainer) |
 
 ### Robzone DUORO X-MAX PROFI / HOMEVAC
 
@@ -29,10 +29,12 @@ device, or a similar product name, is not support.
   [research/sources.md](../research/sources.md).
 - Official app: RobZone (`com.robzone.robe`).
 - Protocol: **HCT Robot LAN protocol, JSON over TCP 8888**. It was identified from
-  the official app's traffic. This tool has no client for it yet. See
+  the official app's traffic. This tool has a read-only client for it. See
   [research/protocols/hct-lan-8888.md](../research/protocols/hct-lan-8888.md).
-- The protocol carries state, battery, error codes, pose, map and trajectory. They
-  stay **TBD** here until this tool implements them and they are verified.
+- `status` and `monitor` read state, battery, error code, firmware and pose. These
+  are **Experimental**: implemented and seen working, not yet cross-checked. Map
+  and trajectory are logged raw but not decoded, so they stay TBD. The LAN protocol
+  exposes no raw LiDAR, encoder or IMU data.
 - Hardware revision: unknown. Firmware version: `7.6.2716(332)`, as reported by
   the robot. RobZone app protocol version: `5.0.9`.
 
@@ -42,6 +44,8 @@ device, or a similar product name, is not support.
 |---|---|---|
 | 2026-09-24 | LAN fingerprint ([experiment 01](../research/experiments/01-lan-discovery.md)) | Robot identified by the router DHCP list (`udhcp 1.27.2`) and confirmed by switching it off. Embedded Linux (TTL 64). TCP 22 (OpenSSH 7.6), 53, 8000 (Mongoose 6.11) and 8888 open. No Tuya broadcasts. This is a research observation, not a verified capability. |
 | 2026-09-24 | App traffic capture ([experiment 02](../research/experiments/02-app-traffic-capture.md)) | The app talks to the robot on TCP 8888 (JSON). The robot reports state, battery, error, `robotPos`/`deg`, the map and the trajectory. Cloud: `*.hctrobot.com`. |
+| 2026-09-24 | `status` / `monitor` with this tool | Read-only client works: state, battery, error, firmware and pose read over LAN. The battery value has not yet been cross-checked against the app, so these stay Experimental. |
+| 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | Preliminary: the reported heading drifts about 1.5 °/s while the reported position is constant. Under investigation. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has

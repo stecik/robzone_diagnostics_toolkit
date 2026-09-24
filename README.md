@@ -13,16 +13,20 @@ the faulty component, and then to a cheap targeted repair.
 > - LAN discovery (`discover`)
 > - TCP port scan (`scan`)
 > - the model registry (`models`)
+> - a **read-only robot client** over the robot's LAN protocol (TCP 8888):
+>   - `import-credentials`: set up access
+>   - `status`: one snapshot
+>   - `monitor`: log over time
+> - offline analysis of those logs (`analyze`)
 >
-> Robot telemetry and automated diagnosis (`diagnose`) do not exist yet. They will
-> be built once the robot's protocol is understood. Nothing in this README claims
-> otherwise.
+> Automated diagnosis (`diagnose`, with PASS/FAIL results) does not exist yet. It
+> needs thresholds backed by measurements first.
 
 ## Supported models
 
 | Model | Model ID | Status |
 |---|---|---|
-| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development. Every capability is still TBD. |
+| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development. State, battery, error code, firmware and pose are Experimental; everything else is TBD. |
 
 This is the only model the maintainer physically owns. For details, and for what
 has actually been verified, see [docs/supported-models.md](docs/supported-models.md).
@@ -62,8 +66,8 @@ points at one of them.
 | 2 | Tuya test: is it Tuya? | **rejected**: the robot uses the HCT Robot platform, not Tuya |
 | 3 | Network capture: app traffic | **done**: the app talks to the robot on TCP 8888 (JSON). Pose, map, trajectory, state and errors are available ([protocol notes](research/protocols/hct-lan-8888.md)) |
 | 4 | App (APK) analysis: endpoints, SDKs, map/trajectory formats | planned |
-| 5 | Minimal read-only client: `info`, `status`, `monitor` | **next** |
-| 6 | Synchronised JSONL logger (pose, state, errors, map updates) | planned |
+| 5 | Minimal read-only client: `status`, `monitor` | **done** (Experimental) |
+| 6 | JSONL logger (pose, state, errors, map updates) + `analyze` | **in progress**. First finding: [heading drift at standstill](research/experiments/03-heading-at-standstill.md) (preliminary) |
 | 7 | Automated `diagnose` with PASS/WARN/FAIL/UNKNOWN/UNSUPPORTED | planned |
 | 8 | Hardware: passive UART sniffing of the LiDAR ↔ mainboard link | only if needed |
 
@@ -215,6 +219,81 @@ uv run robzone-diag scan 192.168.1.50 --ports all --output captures/scan-all.jso
   (8 parallel connections, 3 s timeout). If ports show as "No answer", retry with
   `--workers 2 --timeout 5`.
 
+### Connecting to the robot: `import-credentials`
+
+The robot's LAN protocol needs three values that the official app knows: the
+robot's IP, an `authCode` and a device ID. You get them once, by capturing the app's
+traffic on your phone.
+
+1. On Android, install [PCAPdroid](https://github.com/emanuele-f/PCAPdroid). It is
+   open source and needs no root.
+2. In PCAPdroid, set **Target apps → RobZone** and **Dump mode → PCAP file**.
+3. Start the capture. Open the RobZone app, open your robot and wait until the map
+   shows (about 30 s). Then stop the capture.
+4. Copy the `.pcap` file to `captures/` on your computer.
+5. Run:
+
+   ```bash
+   uv run robzone-diag import-credentials captures/your-capture.pcap
+   ```
+
+   It writes `.env` with `ROBZONE_DIAG_HOST`, `ROBZONE_DIAG_AUTH_CODE`,
+   `ROBZONE_DIAG_DEVICE_ID` and `ROBZONE_DIAG_MODEL`, and prints them masked.
+
+`.env` and the capture are private. Both are gitignored; never share them. If your
+router gives the robot a new IP later, edit `ROBZONE_DIAG_HOST` in `.env`.
+
+Before `status` or `monitor`, **close the RobZone app**, because the robot may
+serve only one client at a time. Both commands send only a keepalive ping and
+read-only queries. The client refuses to encode commands such as start, pause,
+dock or drive.
+
+### `status`: one snapshot
+
+```bash
+uv run robzone-diag status
+```
+
+```
+State:            idle / standby (2)
+Battery:          58 %
+Error code:       no error (0)
+Firmware:         7.6.2716(332)
+Relocalisation:   relocaNotice=0 (meaning inferred)
+Reported position: x=330, y=353 (map cells, robot's own estimate)
+Reported heading:  164°
+Map:               700x700 cells, has data, session 2026-09-24-22-20-11-3
+```
+
+- State and error labels come from the model definition and cover only values
+  actually observed; others show as "meaning unknown".
+- The position and heading are the **robot's own estimate**. They are what we
+  compare with reality when diagnosing drift.
+
+### `monitor`: log a run
+
+```bash
+uv run robzone-diag monitor --output captures/run.jsonl
+```
+
+- Polls the pose every 5 s (`--interval`), as the app does.
+- Prints one line per report and appends every message to the JSONL file.
+- Reconnects automatically. Stop it with Ctrl+C or `--duration SECONDS`.
+- The log contains the robot's map, i.e. your floor plan. `--no-map` leaves the raw
+  map and trajectory out.
+
+### `analyze`: measurements from a log
+
+```bash
+uv run robzone-diag analyze captures/run.jsonl
+```
+
+This finds stretches where the reported position does not change and measures how
+the reported heading changes during them. A robot that is physically still should
+report a nearly constant heading. See
+[experiment 03](research/experiments/03-heading-at-standstill.md) for why this
+matters and how to run it properly. No pass/fail threshold is applied yet.
+
 ## Interpreting results
 
 Two kinds of status appear in this project:
@@ -267,6 +346,14 @@ tools, e.g. a running TinyTuya scan or Home Assistant on the same computer.
 **The robot is not in the ARP table:** your computer has not talked to it recently.
 Find its IP in the router's DHCP list, then run `scan <ip>`, or ping it first.
 
+**`status`/`monitor`: "cannot connect" or no reply:**
+
+- The robot is off, or its IP changed; check the router's client list.
+- Or the RobZone app is still connected; close it fully.
+
+**`missing settings: ROBZONE_DIAG_...`:** run `import-credentials` first, or run the
+command from the repository directory where `.env` lives (or pass `--env-file`).
+
 **`scan` shows every port as "No answer":** the robot may be offline or asleep, or
 the address is wrong. Check that the Wi-Fi LED is solid blue, check the IP, and
 retry with `--workers 2 --timeout 5`.
@@ -280,6 +367,12 @@ retry with `--workers 2 --timeout 5`.
 - `scan` refuses non-private addresses. Only scan devices you own.
 - Raw reports can contain MAC addresses, device IDs and hostnames. Keep them in
   `captures/` (gitignored). Use `--redact` and review the output before sharing.
+- `.env` holds your robot's LAN credentials. `monitor` logs contain your floor
+  plan. Both stay local.
+- Observed platform issue: the RobZone app sends your account token to the vendor
+  cloud **unencrypted**, on TCP 20008. See
+  [experiment 02](research/experiments/02-app-traffic-capture.md). Avoid using
+  the app on untrusted networks.
 - Never publish Tuya `local_key`s, account tokens, Wi-Fi passwords or packet
   captures. The `.gitignore` blocks common file names (`devices.json`, `*.pcap`,
   `*.apk`, `.env`, …).

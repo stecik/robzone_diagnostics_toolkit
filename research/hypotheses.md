@@ -75,9 +75,16 @@ Sencor variant) become the first real telemetry source.
 
 ## H2. Map drift comes from the LiDAR, odometry, IMU, SLAM or the app/cloud
 
-**Status: open.** The first telemetry source has been identified but not
-implemented yet. The robot reports its own pose (`robotPos`, `deg`), trajectory,
-map increments, state and error codes over TCP 8888.
+**Status: open. Leading lead: heading estimate / IMU (branch C).**
+
+- The robot reports its own pose (`robotPos`, `deg`), trajectory, map increments,
+  state and error codes over TCP 8888. `status`, `monitor` and `analyze` read them.
+- 2026-09-24, preliminary: with the robot paused and its reported position
+  constant, the reported heading drifted linearly by about **1.5 °/s**. See
+  [experiment 03](experiments/03-heading-at-standstill.md).
+- This looks like an uncompensated gyroscope bias, but it is not confirmed yet.
+  Still to check: that the robot was physically still, the docked and
+  power-cycled runs, and that `deg` really is the heading.
 
 Two routes could give us one:
 
