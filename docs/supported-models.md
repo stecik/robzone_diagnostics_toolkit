@@ -35,8 +35,14 @@ device, or a similar product name, is not support.
   are **Experimental**: implemented and seen working, not yet cross-checked. Map
   and trajectory are logged raw but not decoded, so they stay TBD. The LAN protocol
   exposes no raw LiDAR, encoder or IMU data.
-- Hardware revision: unknown. Firmware version: `7.6.2716(332)`, as reported by
-  the robot. RobZone app protocol version: `5.0.9`.
+- Hardware revision: unknown.
+- Firmware versions, as shown in the app:
+  - Wi-Fi `1.0.51(2026)`
+  - system `1.20.219(21101819)`, labelled `system3308` (likely a Rockchip RK3308
+    SoC)
+  - MCU `7.6.2716(332)`, also reported by the robot
+- RobZone app protocol version: `5.0.9`.
+- Security notes: [research/security-assessment.md](../research/security-assessment.md).
 
 **Tests performed on hardware:**
 
