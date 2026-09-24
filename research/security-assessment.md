@@ -80,6 +80,29 @@ Proscenic or the RK3308 BSP.
   - the attacker gets a Linux box inside your LAN to attack other devices from.
 - The robot has no camera. Whether it has a microphone is unknown.
 
+## Can an attacker on the home LAN get a root shell on the robot?
+
+This is an assessment, not a test. No exploitation or password guessing was
+attempted.
+
+| Path | Likelihood | Reasoning |
+|---|---|---|
+| sshd vulnerability | low | No known pre-auth RCE or auth bypass for OpenSSH 7.6. |
+| SSH password | **unknown, the key question** | The password is vendor-set and unknown. Cheap IoT devices often ship weak or fleet-wide root passwords, e.g. [CVE-2024-11147](https://nvd.nist.gov/vuln/detail/CVE-2024-11147) (a derivable root password). Brute-force protection is unlikely on this firmware. |
+| Mongoose 6.11 on TCP 8000 | medium, skilled attacker | It has CVSS 9.8 memory-safety bugs in the HTTP core. No public exploit exists for this device; one would need a custom ARM exploit. Denial of service is easier. |
+| Malicious firmware update via a spoofed cloud | unknown | Update signing and verification has not been examined. |
+| TCP 8888 control protocol | not a shell | It gives control of the vacuum and the map, not Linux. |
+
+Conclusion:
+
+- Opportunistic or automated compromise is unlikely.
+- A targeted, skilled attacker already inside the LAN could plausibly succeed.
+- The prize would be an always-on, unmonitored, unpatched Linux host inside the
+  network.
+- The owner cannot harden the device itself: there is no access to change the
+  password or disable services, and no vendor patches.
+- **Network isolation is the effective mitigation.**
+
 ## Recommended mitigations (owner's choice)
 
 1. Check the router: **no port forwarding and no UPnP mapping** to the robot's IP.
