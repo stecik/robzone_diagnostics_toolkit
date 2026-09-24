@@ -26,7 +26,7 @@ the faulty component, and then to a cheap targeted repair.
 
 | Model | Model ID | Status |
 |---|---|---|
-| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development. State, battery, error code, firmware and pose are Experimental; everything else is TBD. |
+| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development. Battery is Verified; state, error code, firmware and pose are Experimental; everything else is TBD. |
 
 This is the only model the maintainer physically owns. For details, and for what
 has actually been verified, see [docs/supported-models.md](docs/supported-models.md).

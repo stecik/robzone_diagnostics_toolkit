@@ -11,9 +11,13 @@ from robzone_diag.protocols.hct import PROTOCOL_ID as HCT_LAN
 _EXPERIMENTAL = {
     Capability.DEVICE_INFO,  # firmware version in the status push
     Capability.STATUS,
-    Capability.BATTERY,
     Capability.ERROR_CODES,  # raw code only; meanings unknown for this model
     Capability.POSE,  # robotPos + deg from the map/pose reply
+}
+
+# Verified on the maintainer's unit: see docs/supported-models.md for the test.
+_VERIFIED = {
+    Capability.BATTERY,  # 2026-09-24: status() value matched the RobZone app (57-58 %)
 }
 
 MODEL = ModelDefinition(
@@ -23,7 +27,9 @@ MODEL = ModelDefinition(
     support=SupportLevel.ACTIVE_DEVELOPMENT,
     protocol=HCT_LAN,
     capabilities={
-        capability: CapabilityState.EXPERIMENTAL
+        capability: CapabilityState.VERIFIED
+        if capability in _VERIFIED
+        else CapabilityState.EXPERIMENTAL
         if capability in _EXPERIMENTAL
         else CapabilityState.TBD
         for capability in Capability

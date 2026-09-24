@@ -19,7 +19,7 @@ device, or a similar product name, is not support.
 
 | Model | Model ID | Support | Discovery | Basic telemetry | LiDAR | Odometry | Navigation | Tested hardware |
 |---|---|---|---|---|---|---|---|---|
-| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development | TBD | Experimental (state, battery, error, firmware) | TBD | TBD | Experimental (reported pose only) | 1 unit (maintainer) |
+| Robzone DUORO X-MAX PROFI / HOMEVAC | `duoro-xmax-profi` | Active development | TBD | Battery: Verified. State, error, firmware: Experimental | TBD | TBD | Experimental (reported pose only) | 1 unit (maintainer) |
 
 ### Robzone DUORO X-MAX PROFI / HOMEVAC
 
@@ -44,8 +44,8 @@ device, or a similar product name, is not support.
 |---|---|---|
 | 2026-09-24 | LAN fingerprint ([experiment 01](../research/experiments/01-lan-discovery.md)) | Robot identified by the router DHCP list (`udhcp 1.27.2`) and confirmed by switching it off. Embedded Linux (TTL 64). TCP 22 (OpenSSH 7.6), 53, 8000 (Mongoose 6.11) and 8888 open. No Tuya broadcasts. This is a research observation, not a verified capability. |
 | 2026-09-24 | App traffic capture ([experiment 02](../research/experiments/02-app-traffic-capture.md)) | The app talks to the robot on TCP 8888 (JSON). The robot reports state, battery, error, `robotPos`/`deg`, the map and the trajectory. Cloud: `*.hctrobot.com`. |
-| 2026-09-24 | `status` / `monitor` with this tool | Read-only client works: state, battery, error, firmware and pose read over LAN. The battery value has not yet been cross-checked against the app, so these stay Experimental. |
-| 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | Preliminary: the reported heading drifts about 1.5 °/s while the reported position is constant. Under investigation. |
+| 2026-09-24 | `status` / `monitor` with this tool | Read-only client works: state, battery, error, firmware and pose read over LAN. The battery value matched the app (57–58 %), so **Battery is Verified**. The others stay Experimental. |
+| 2026-09-24 | Heading at standstill ([experiment 03](../research/experiments/03-heading-at-standstill.md)) | The reported heading drifts about 1.5 °/s while the reported position is constant. The maintainer confirmed the robot was physically still. The cause is under investigation. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has

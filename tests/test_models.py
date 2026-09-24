@@ -21,10 +21,10 @@ def test_every_model_declares_every_capability():
         assert set(model.capabilities) == set(Capability), model.model_id
 
 
-def test_unverified_model_is_never_auto_identified():
+def test_model_without_verified_fingerprint_is_never_auto_identified():
     model = get_model("duoro-xmax-profi")
     assert model.fingerprint is None
-    assert CapabilityState.VERIFIED not in model.capabilities.values()
+    assert model.state(Capability.DISCOVERY) is CapabilityState.TBD
     assert identify(HostRecord("192.168.0.50")) == []
 
 

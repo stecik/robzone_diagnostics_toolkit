@@ -65,7 +65,8 @@ Conditions:
 - Robot paused in the room after a 2-minute cleaning run (experiment 02).
 - State `idle / standby (2)`.
 - Firmware `7.6.2716(332)`.
-- The maintainer has not yet confirmed that the robot was physically still.
+- **Confirmed by the maintainer:** the robot stood physically still for the whole run.
+  It did not move, clean or beep.
 
 ```
 position (330, 353), 88 s, 30 samples:
@@ -96,8 +97,7 @@ Limits:
 
 Next steps:
 
-1. Confirm that the robot was physically still.
-2. Run steps B, C and D.
-3. If the drift persists after a power cycle on the dock, run a monitored cleaning
+1. Run steps B, C and D.
+2. If the drift persists after a power cycle on the dock, run a monitored cleaning
    run from the dock. Mark the moment the map visibly breaks, then compare it with
    the heading and trajectory logs.
