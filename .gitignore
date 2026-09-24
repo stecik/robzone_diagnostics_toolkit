@@ -216,3 +216,39 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---------------------------------------------------------------------------
+# robzone-diag: private data that must never be committed
+# ---------------------------------------------------------------------------
+# Raw diagnostic output (may contain MACs, device IDs, hostnames). Only the README is tracked.
+captures/*
+!captures/README.md
+# Packet captures, HTTP archives, app packages and decompiled output
+*.pcap
+*.pcapng
+*.cap
+*.har
+*.apk
+*.apks
+*.xapk
+*.apkm
+apk/
+jadx-out/
+apktool-out/
+# TinyTuya / Tuya wizard output: contains local_key and cloud credentials
+devices.json
+tinytuya.json
+snapshot.json
+tuya-raw.json
+# Keys, certificates, keystores
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+# Personal research notes that are not sanitized yet
+research/private/
+# Diagnostic session logs outside the sanitized test fixtures
+*.jsonl
+!tests/fixtures/**/*.jsonl
