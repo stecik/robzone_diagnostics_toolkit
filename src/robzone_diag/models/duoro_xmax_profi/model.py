@@ -12,12 +12,15 @@ MODEL = ModelDefinition(
     manufacturer="Robzone",
     name="DUORO X-MAX PROFI / HOMEVAC",
     support=SupportLevel.ACTIVE_DEVELOPMENT,
-    protocol=None,
+    protocol="HCT Robot LAN protocol, TCP 8888 (identified from app traffic; no client yet)",
     capabilities={capability: CapabilityState.TBD for capability in Capability},
-    tested_hardware="1 unit (maintainer's own). Hardware revision: unknown. Firmware: unknown.",
+    tested_hardware=(
+        "1 unit (maintainer's own). Hardware revision: unknown. Firmware: 7.6.2716(332)."
+    ),
     notes=(
         "The only model the maintainer physically owns.",
-        "Communication protocol not identified yet (Tuya is an unconfirmed hypothesis).",
+        "Status, battery, error codes, pose, map and trajectory were seen in the official "
+        "app's traffic; they stay TBD until this tool implements and verifies them.",
         "No verified LAN fingerprint yet: discovery reports this model as UNKNOWN.",
     ),
     fingerprint=None,

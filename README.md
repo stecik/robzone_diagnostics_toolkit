@@ -59,10 +59,10 @@ points at one of them.
 | Phase | What | Status |
 |---|---|---|
 | 1 | LAN discovery: ARP, UDP broadcasts, open ports | **done for the reference robot**: Linux, SSH, TCP 8000/8888 open, no Tuya broadcasts ([results](research/experiments/01-lan-discovery.md)) |
-| 2 | Tuya test: is it Tuya? Which data points (DPs) can be read locally? | deprioritised: Tuya hypothesis weakened |
-| 3 | Network capture (app traffic first, then idle, cleaning, mapping, docking, map collapse) | **next**: [experiment 02](research/experiments/02-app-traffic-capture.md) |
+| 2 | Tuya test: is it Tuya? | **rejected**: the robot uses the HCT Robot platform, not Tuya |
+| 3 | Network capture: app traffic | **done**: the app talks to the robot on TCP 8888 (JSON). Pose, map, trajectory, state and errors are available ([protocol notes](research/protocols/hct-lan-8888.md)) |
 | 4 | App (APK) analysis: endpoints, SDKs, map/trajectory formats | planned |
-| 5 | Minimal read-only client: `info`, `status`, `monitor` | planned |
+| 5 | Minimal read-only client: `info`, `status`, `monitor` | **next** |
 | 6 | Synchronised JSONL logger (pose, state, errors, map updates) | planned |
 | 7 | Automated `diagnose` with PASS/WARN/FAIL/UNKNOWN/UNSUPPORTED | planned |
 | 8 | Hardware: passive UART sniffing of the LiDAR ↔ mainboard link | only if needed |

@@ -28,16 +28,20 @@ device, or a similar product name, is not support.
 - "HOMEVAC" is the optional self-emptying station, not a different robot. See
   [research/sources.md](../research/sources.md).
 - Official app: RobZone (`com.robzone.robe`).
-- Protocol: not identified. Tuya is a hypothesis under test: see
-  [research/hypotheses.md](../research/hypotheses.md).
-- Hardware revision: unknown. Firmware version: unknown. App version used in tests:
-  not recorded yet.
+- Protocol: **HCT Robot LAN protocol, JSON over TCP 8888**. It was identified from
+  the official app's traffic. This tool has no client for it yet. See
+  [research/protocols/hct-lan-8888.md](../research/protocols/hct-lan-8888.md).
+- The protocol carries state, battery, error codes, pose, map and trajectory. They
+  stay **TBD** here until this tool implements them and they are verified.
+- Hardware revision: unknown. Firmware version: `7.6.2716(332)`, as reported by
+  the robot. RobZone app protocol version: `5.0.9`.
 
 **Tests performed on hardware:**
 
 | Date | Test | Result |
 |---|---|---|
 | 2026-09-24 | LAN fingerprint ([experiment 01](../research/experiments/01-lan-discovery.md)) | Robot identified by the router DHCP list (`udhcp 1.27.2`) and confirmed by switching it off. Embedded Linux (TTL 64). TCP 22 (OpenSSH 7.6), 53, 8000 (Mongoose 6.11) and 8888 open. No Tuya broadcasts. This is a research observation, not a verified capability. |
+| 2026-09-24 | App traffic capture ([experiment 02](../research/experiments/02-app-traffic-capture.md)) | The app talks to the robot on TCP 8888 (JSON). The robot reports state, battery, error, `robotPos`/`deg`, the map and the trajectory. Cloud: `*.hctrobot.com`. |
 
 Generic LAN discovery (`discover`, `scan`) works on any network. It is not a model
 capability: *identifying* this model on the LAN stays TBD until a fingerprint has

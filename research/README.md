@@ -9,6 +9,7 @@ link sources.
 | [hypotheses.md](hypotheses.md) | Open questions, with the evidence for and against each |
 | [sources.md](sources.md) | Verified facts from manuals, app stores and open-source projects, with links |
 | [experiments/](experiments/) | Step-by-step experiment protocols and their recorded results |
+| [protocols/](protocols/) | Wire-protocol notes reconstructed from captures |
 
 Rules:
 

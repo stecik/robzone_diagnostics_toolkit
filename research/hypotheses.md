@@ -9,7 +9,9 @@ Status values:
 
 ## H1. The X-MAX PROFI's Wi-Fi module uses the Tuya platform
 
-**Status: weakened. Not rejected yet.**
+**Status: rejected for the robot itself (2026-09-24).** The robot and the app use
+the HCT Robot platform (`*.hctrobot.com`) and its JSON protocol on TCP 8888. See H3.
+The "SmartLife" pairing AP name remains unexplained.
 
 Evidence for:
 
@@ -41,7 +43,9 @@ What would decide it:
 
 ## H3. The robot uses the Clouds Robot / Sencor-family local protocol on TCP 8888
 
-**Status: supported. Open.**
+**Status: confirmed (2026-09-24).** The RobZone app talks to the robot directly on
+TCP 8888 using this protocol family. See the
+[protocol notes](protocols/hct-lan-8888.md) and [experiment 02](experiments/02-app-traffic-capture.md).
 
 - The robot candidate has TCP 8888 open.
 - [ha-SencorRobotics](https://github.com/MichalTichy/ha-SencorRobotics) controls
@@ -71,7 +75,9 @@ Sencor variant) become the first real telemetry source.
 
 ## H2. Map drift comes from the LiDAR, odometry, IMU, SLAM or the app/cloud
 
-**Status: open.** We have no telemetry access yet.
+**Status: open.** The first telemetry source has been identified but not
+implemented yet. The robot reports its own pose (`robotPos`, `deg`), trajectory,
+map increments, state and error codes over TCP 8888.
 
 Two routes could give us one:
 

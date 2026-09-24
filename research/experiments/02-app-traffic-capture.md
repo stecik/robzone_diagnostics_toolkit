@@ -46,6 +46,41 @@ Play or F-Droid.
   them locally.
 - The RobZone app version and the robot firmware version, if the app shows them.
 
+## Results
+
+### 2026-09-24: first capture, PCAPdroid in HTTP-server mode
+
+Setup:
+
+- Duration about 120 s.
+- The capture was streamed to the PC from PCAPdroid's HTTP server. That mode sends
+  the data live, so the download has to be started before using the app.
+- During the capture the maintainer started a cleaning run (`transitCmd` 100) and
+  paused it after about 115 s (`transitCmd` 102). The robot built a new map during
+  that time.
+
+Traffic seen:
+
+| Peer | Port | What |
+|---|---|---|
+| **robot 192.168.1.x** | **TCP 8888** | Plain JSON protocol, about 112 kB from the robot. See [hct-lan-8888.md](../protocols/hct-lan-8888.md). |
+| `hc-s-eu.hctrobot.com` (Alibaba Cloud EU) | TCP 20008 | **Plain-text** cloud relay of the same protocol, including the account login (`token`, `userId`, `appKey`, `googleToken`) |
+| `eu-mqtt.hctrobot.com` | TCP 28883 (TLS) | MQTT over TLS |
+| `hc-app-eu.hctrobot.com` | 443 | HTTPS API |
+| `oss-as-release.oss-accelerate.aliyuncs.com` | 443 | Alibaba OSS, probably firmware/resources |
+| `android.bugly.qq.com`, `log-eu…log.aliyuncs.com` | — | Crash reporting / logging. DNS answered `0.0.0.0` (blocked) |
+
+Result:
+
+- **H3 is confirmed**: the app talks directly to the robot on TCP 8888.
+- The robot pushes its state, and it answers map/pose queries with `robotPos`,
+  `deg`, the map and trajectory increments.
+- The robot's firmware version is `7.6.2716(332)`.
+
+**Security note:** the cloud relay on TCP 20008 carries the account token in plain
+text. Anyone who can observe the traffic between the phone and the cloud could read
+it. This is an app/platform issue, not something this project changes.
+
 ## How to read the outcome
 
 | Observation | Interpretation | Next step |
